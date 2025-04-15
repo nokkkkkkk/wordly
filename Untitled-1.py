@@ -3,8 +3,7 @@ from termcolor import colored
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import torch
 
-#Загрузил многоязычную модель (заменил ее реальной многоязычной моделью для достижения лучших результатов).
-model_name = "gpt2"  
+model_name = "gpt2" 
 text_gen = pipeline("text-generation", model=model_name)
 
 # Языковой словарь для подсказок
@@ -14,6 +13,7 @@ language_prompts = {
     "fr": "Donne-moi un mot de cinq lettres:",
     "de": "Gib mir ein fünf Buchstaben langes Wort:",
     "it": "Dammi una parola di cinque lettere:",
+    "ru": "Дай мне слово из пяти букв:",
 }
 
 # Функция выбора языка
@@ -29,7 +29,7 @@ def select_language():
 def generate_ai_word(lang="en"):
     prompt = language_prompts.get(lang, language_prompts["en"])
     while True:
-        output = text_gen(prompt, max_length=10, num_return_sequences=1)[0]['generated_text']
+        output = text_gen(prompt, max_length=15, num_return_sequences=1)[0]['generated_text']
         words = output.split()
         for word in words:
             if word.isalpha() and len(word) == 5:
@@ -51,7 +51,7 @@ def display_feedback(guess, target):
 def play_wordly(mode="ai", difficulty=1, language="en"):
     if mode == "friends":
         target_word = input("Player 1, enter your secret 5-letter word: ").lower()
-        print("\n" * 50)  # Clear screen
+        print("\n" * 50)  # Очистить экран
     else:
         target_word = generate_ai_word(lang=language)
 
