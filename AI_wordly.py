@@ -5,21 +5,20 @@ import nltk
 import requests
 from pyfiglet import figlet_format
 
-# Load a multilingual model for broader language support
-model_name = "bigscience/bloom-560m"  # BLOOM is multilingual and better for non-English words
+model_name = "bigscience/bloom-560m"  # BLOOM многоязычен и лучше подходит для неанглийских слов
 text_gen = pipeline("text-generation", model=model_name)
 
-# Language dictionary for prompts
+# Языковой словарь для подсказок
 language_prompts = {
     "en": "Give me a five-letter English word:",
     "es": "Dame una palabra en español de cinco letras:",
     "fr": "Donne-moi un mot français de cinq lettres:",
     "de": "Gib mir ein deutsches Wort mit fünf Buchstaben:",
     "it": "Dammi una parola italiana di cinque lettere:",
-    "ru": "Дай мне русское слово из пяти букв:"  # Russian prompt
+    "ru": "Дай мне русское слово из пяти букв:"
 }
 
-# UI translations
+# UI переводы
 ui_text = {
     "en": {
         "welcome": "Welcome to the Multilingual Word Guessing Game!",
@@ -53,7 +52,7 @@ ui_text = {
     }
 }
 
-# Function to select a language
+# Функция для выбора языка
 def select_language():
     print(ui_text["en"]["select_language"])
     for idx, lang in enumerate(language_prompts.keys()):
@@ -62,7 +61,7 @@ def select_language():
     lang_code = list(language_prompts.keys())[choice - 1]
     return lang_code
 
-# Function to validate word using NLTK (for English) or API for other languages
+# Функция для проверки слов с использованием NLTK (для английского языка) или API для других языков
 def is_valid_word(word, language="en"):
     if language == "en":
         nltk.download('words')
@@ -75,7 +74,7 @@ def is_valid_word(word, language="en"):
             return response.status_code == 200
         return True
 
-# Function to generate a 5-letter word using multilingual AI
+# Функция для генерации слова из 5 букв с помощью многоязычного искусственного интеллекта
 def generate_ai_word(lang="en"):
     prompt = language_prompts.get(lang, language_prompts["en"])
     while True:
@@ -86,7 +85,7 @@ def generate_ai_word(lang="en"):
                 if is_valid_word(word.lower(), lang):
                     return word.lower()
 
-# Function to display word with color-coded feedback
+# Функция отображения слова с цветовой обратной связью
 def display_feedback(guess, target):
     result = ""
     for i in range(5):
@@ -133,7 +132,7 @@ def play_wordly(mode="ai", difficulty=1, language="en"):
 
     print(f"{ui_text[language]['out_of_attempts']} {target_word}")
 
-# Banner with language support
+# Баннер с языковой поддержкой
 def print_banner(language="en"):
     banner = figlet_format("AI Wordly", font="slant")
     cprint(banner, "cyan")
@@ -141,7 +140,7 @@ def print_banner(language="en"):
     cprint(ui_text[language]["welcome"], "green", attrs=["bold"])
     print("=" * 60)
 
-# Main menu with translated UI
+# Главное меню с переведенным пользовательским интерфейсом
 def main_menu():
     language = select_language()
     print_banner(language)
