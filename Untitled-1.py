@@ -3,20 +3,20 @@ from termcolor import colored
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import torch
 
-model_name = "gpt2" 
+model_name = "bigscience/bloom-560m"  # BLOOM многоязычен и лучше подходит для неанглийских слов
 text_gen = pipeline("text-generation", model=model_name)
 
 # Языковой словарь для подсказок
 language_prompts = {
-    "en": "Give me a five-letter word:",
-    "es": "Dame una palabra de cinco letras:",
-    "fr": "Donne-moi un mot de cinq lettres:",
-    "de": "Gib mir ein fünf Buchstaben langes Wort:",
-    "it": "Dammi una parola di cinque lettere:",
-    "ru": "Дай мне слово из пяти букв:",
+    "en": "Give me a five-letter English word:",
+    "es": "Dame una palabra en español de cinco letras:",
+    "fr": "Donne-moi un mot français de cinq lettres:",
+    "de": "Gib mir ein deutsches Wort mit fünf Buchstaben:",
+    "it": "Dammi una parola italiana di cinque lettere:",
+    "ru": "Дай мне русское слово из пяти букв:" 
 }
 
-# Функция выбора языка
+# Функция для выбора языка
 def select_language():
     print("Select a language:")
     for idx, lang in enumerate(language_prompts.keys()):
@@ -25,11 +25,11 @@ def select_language():
     lang_code = list(language_prompts.keys())[choice - 1]
     return lang_code
 
-# Функция для генерации слова из 5 букв
+# Функция для генерации слова из 5 букв с помощью многоязычного искусственного интеллекта
 def generate_ai_word(lang="en"):
     prompt = language_prompts.get(lang, language_prompts["en"])
     while True:
-        output = text_gen(prompt, max_length=15, num_return_sequences=1)[0]['generated_text']
+        output = text_gen(prompt, max_length=15, num_return_sequences=1, do_sample=True, temperature=0.9)[0]['generated_text']
         words = output.split()
         for word in words:
             if word.isalpha() and len(word) == 5:
@@ -51,7 +51,7 @@ def display_feedback(guess, target):
 def play_wordly(mode="ai", difficulty=1, language="en"):
     if mode == "friends":
         target_word = input("Player 1, enter your secret 5-letter word: ").lower()
-        print("\n" * 50)  # Очистить экран
+        print("\n" * 50)  # Чистый экран
     else:
         target_word = generate_ai_word(lang=language)
 
