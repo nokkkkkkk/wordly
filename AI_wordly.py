@@ -1,166 +1,135 @@
+from transformers import pipeline, AutoTokenizer, AutoModelWithLMHead
+from termcolor import colored
 import random
-from termcolor import colored, cprint
-from transformers import pipeline
-import nltk
-import requests
-from pyfiglet import figlet_format
+import sys
 
-model_name = "bigscience/bloom-560m"  # BLOOM многоязычен и лучше подходит для неанглийских слов
-text_gen = pipeline("text-generation", model=model_name)
+# Попытка загрузить русскую GPT-модель
+print("Загрузка ИИ...")
+try:
+    tokenizer = AutoTokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")
+    model = AutoModelWithLMHead.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")
+    text_gen = pipeline("text-generation", model=model, tokenizer=tokenizer)
+except Exception as e:
+    print("Ошибка загрузки модели RuGPT:", e)
+    text_gen = None
 
-# Языковой словарь для подсказок
-language_prompts = {
-    "en": "Give me a five-letter English word:",
-    "es": "Dame una palabra en español de cinco letras:",
-    "fr": "Donne-moi un mot français de cinq lettres:",
-    "de": "Gib mir ein deutsches Wort mit fünf Buchstaben:",
-    "it": "Dammi una parola italiana di cinque lettere:",
-    "ru": "Дай мне русское слово из пяти букв:"
-}
+# Запасной список слов на случай сбоя искусственного интеллекта
+fallback_words = ["лампа", "песня", "завод", "носик", "снега", "чайка", "город", "листь", "водач", "время"]
 
-# UI переводы
-ui_text = {
-    "en": {
-        "welcome": "Welcome to the Multilingual Word Guessing Game!",
-        "menu_play_ai": "1. Play with AI",
-        "menu_play_friends": "2. Play with Friends",
-        "menu_difficulty": "3. Play with Difficulty Settings",
-        "choose_option": "Choose an option (1-3):",
-        "choose_difficulty": "Choose difficulty: 1 (Easy), 2 (Medium), 3 (Hard), 4 (Extreme)",
-        "enter_difficulty": "Enter difficulty:",
-        "invalid_choice": "Invalid choice.",
-        "select_language": "Select a language:",
-        "guess_prompt": "Enter your 5-letter guess (or type 'hint'):",
-        "hint_text": "Hint: The word contains the letter",
-        "correct": "You guessed it in {attempts} attempts!",
-        "out_of_attempts": "Out of attempts! The word was:"
-    },
-    "ru": {
-        "welcome": "Добро пожаловать в многоязычную игру угадай слово!",
-        "menu_play_ai": "1. Играть с ИИ",
-        "menu_play_friends": "2. Играть с другом",
-        "menu_difficulty": "3. Сложность",
-        "choose_option": "Выберите опцию (1-3):",
-        "choose_difficulty": "Выберите сложность: 1 (Легко), 2 (Средне), 3 (Сложно), 4 (Экстрим)",
-        "enter_difficulty": "Введите уровень сложности:",
-        "invalid_choice": "Неверный выбор.",
-        "select_language": "Выберите язык:",
-        "guess_prompt": "Введите слово из 5 букв (или 'hint' для подсказки):",
-        "hint_text": "Подсказка: слово содержит букву",
-        "correct": "Вы угадали за {attempts} попыток!",
-        "out_of_attempts": "Попытки закончились! Загаданное слово было:"
-    }
-}
+# Сгенерируйте русское слово из 5 букв с помощью искусственного интеллекта
+def generate_word():
+    if text_gen:
+        prompt = "Придумай случайное русское слово из 5 букв:"
+        try:
+            response = text_gen(prompt, max_length=20, num_return_sequences=1)
+            word = response[0]['generated_text'].strip().split()[-1]
+            word = ''.join(filter(str.isalpha, word))
+            if len(word) == 5:
+                return word.lower()
+        except:
+            pass
+    return random.choice(fallback_words)
 
-# Функция для выбора языка
-def select_language():
-    print(ui_text["en"]["select_language"])
-    for idx, lang in enumerate(language_prompts.keys()):
-        print(f"{idx + 1}. {lang}")
-    choice = int(input("Enter choice: "))
-    lang_code = list(language_prompts.keys())[choice - 1]
-    return lang_code
-
-# Функция для проверки слов с использованием NLTK (для английского языка) или API для других языков
-def is_valid_word(word, language="en"):
-    if language == "en":
-        nltk.download('words')
-        from nltk.corpus import words
-        return word in words.words()
-    else:
-        if language == "ru":
-            url = f"https://api.dictionaryapi.dev/api/v2/entries/ru/{word}"
-            response = requests.get(url)
-            return response.status_code == 200
-        return True
-
-# Функция для генерации слова из 5 букв с помощью многоязычного искусственного интеллекта
-def generate_ai_word(lang="en"):
-    prompt = language_prompts.get(lang, language_prompts["en"])
-    while True:
-        output = text_gen(prompt, max_length=15, num_return_sequences=1, do_sample=True, temperature=0.9)[0]['generated_text']
-        words = output.split()
-        for word in words:
-            if word.isalpha() and len(word) == 5:
-                if is_valid_word(word.lower(), lang):
-                    return word.lower()
-
-# Функция отображения слова с цветовой обратной связью
-def display_feedback(guess, target):
-    result = ""
+# Оцените, угадайте и распечатайте цветной отзыв
+def evaluate_guess(secret_word, guess):
+    output = ""
     for i in range(5):
-        if guess[i] == target[i]:
-            result += colored(guess[i], "green")
-        elif guess[i] in target:
-            result += colored(guess[i], "yellow")
+        if guess[i] == secret_word[i]:
+            output += colored(guess[i], "green")
+        elif guess[i] in secret_word:
+            output += colored(guess[i], "yellow")
         else:
-            result += colored(guess[i], "white")
-    print(result)
-def play_wordly(mode="ai", difficulty=1, language="en"):
-    if mode == "friends":
-        target_word = input("Player 1, enter your secret 5-letter word: ").lower()
-        print("\n" * 50)
-    else:
-        target_word = generate_ai_word(lang=language)
+            output += guess[i]
+    print(output)
 
-    max_attempts = {1: float('inf'), 2: 10, 3: 5, 4: 3}[difficulty]
-    hints = {1: 3, 2: 1, 3: 0, 4: 0}[difficulty]
+# Настройки сложности
+difficulties = {
+    "1": {"tries": 1000, "hints": 3, "name": "Лёгкий (бесконечные попытки, 3 подсказки)"},
+    "2": {"tries": 10, "hints": 1, "name": "Средний (10 попыток, 1 подсказка)"},
+    "3": {"tries": 5, "hints": 0, "name": "Сложный (5 попыток, без подсказок)"},
+    "4": {"tries": 3, "hints": 0, "name": "Хардкор (3 попытки, без подсказок)"},
+}
 
-    print(f"\n{ui_text[language]['welcome']}")
-    print(f"{max_attempts if max_attempts != float('inf') else '∞'} попыток!")
+# Игровая логика
+def play_with_ai():
+    print("\nВыберите уровень сложности:")
+    for key in difficulties:
+        print(f"{key}. {difficulties[key]['name']}")
+    choice = input("Ваш выбор: ")
+    level = difficulties.get(choice, difficulties["1"])
+    
+    secret = generate_word()
+    attempts = level["tries"]
+    hints = level["hints"]
+    
+    print("\nУгадай слово из 5 букв. Удачи!\n")
 
-    attempts = 0
-    used_hints = 0
-
-    while attempts < max_attempts:
-        guess = input(ui_text[language]["guess_prompt"]).lower()
-        if guess == "hint" and used_hints < hints:
-            print(f"{ui_text[language]['hint_text']} '{random.choice(target_word)}'")
-            used_hints += 1
+    while attempts > 0:
+        guess = input("Введите слово: ").strip().lower()
+        if guess == "hint" and hints > 0:
+            print(colored(f"Подсказка: первая буква — {secret[0]}", "cyan"))
+            hints -= 1
             continue
-
-        if len(guess) != 5 or not guess.isalpha():
-            print("Введите корректное слово из 5 букв.")
+        if len(guess) != 5:
+            print("Слово должно быть из 5 букв.")
             continue
-
-        attempts += 1
-        display_feedback(guess, target_word)
-
-        if guess == target_word:
-            print(ui_text[language]["correct"].format(attempts=attempts))
+        evaluate_guess(secret, guess)
+        if guess == secret:
+            print(colored("Поздравляем! Вы угадали слово!", "green"))
             return
+        attempts -= 1
+        print(f"Осталось попыток: {attempts}, подсказок: {hints}")
+    
+    print(colored(f"Вы проиграли. Загаданное слово было: {secret}", "red"))
 
-    print(f"{ui_text[language]['out_of_attempts']} {target_word}")
+# Локальный многопользовательский режим
+def play_with_friend():
+    print("\nИгрок 1, введите слово из 5 букв:")
+    secret = input("Секретное слово: ").strip().lower()
+    print("\n" * 50)  # Чистый экран
+    print("Игрок 2, угадывай слово!")
 
-# Баннер с языковой поддержкой
-def print_banner(language="en"):
-    banner = figlet_format("AI Wordly", font="slant")
-    cprint(banner, "cyan")
-    print("=" * 60)
-    cprint(ui_text[language]["welcome"], "green", attrs=["bold"])
-    print("=" * 60)
+    attempts = 6
+    while attempts > 0:
+        guess = input("Ваше предположение: ").strip().lower()
+        if len(guess) != 5:
+            print("Слово должно быть из 5 букв.")
+            continue
+        evaluate_guess(secret, guess)
+        if guess == secret:
+            print(colored("Угадано! Победа!", "green"))
+            return
+        attempts -= 1
+        print(f"Осталось попыток: {attempts}")
+    
+    print(colored(f"Увы! Слово было: {secret}", "red"))
 
-# Главное меню с переведенным пользовательским интерфейсом
-def main_menu():
-    language = select_language()
-    print_banner(language)
-    cprint(ui_text[language]["menu_play_ai"], "yellow")
-    cprint(ui_text[language]["menu_play_friends"], "yellow")
-    cprint(ui_text[language]["menu_difficulty"], "yellow")
-    print()
+# Баннер
+def show_banner():
+    print(colored("\n" + "="*30, "magenta"))
+    print(colored("     Добро пожаловать в Wordly!", "magenta"))
+    print(colored("     Игра на угадывание слов", "cyan"))
+    print(colored("="*30 + "\n", "magenta"))
 
-    choice = input(ui_text[language]["choose_option"])
-
+# Главное меню
+def main():
+    show_banner()
+    print("1. Играть с ИИ")
+    print("2. Играть с другом")
+    print("3. Выход")
+    
+    choice = input("Выберите режим: ").strip()
     if choice == "1":
-        play_wordly(mode="ai", language=language)
+        play_with_ai()
     elif choice == "2":
-        play_wordly(mode="friends", language=language)
+        play_with_friend()
     elif choice == "3":
-        cprint(ui_text[language]["choose_difficulty"], "magenta")
-        diff = int(input(ui_text[language]["enter_difficulty"]))
-        play_wordly(mode="ai", difficulty=diff, language=language)
+        print("До свидания!")
+        sys.exit()
     else:
-        cprint(ui_text[language]["invalid_choice"], "red")
+        print("Неверный ввод. Попробуйте снова.")
+        main()
 
-if name == '__main__':
-    main_menu()
+if __name__ == '__main__':
+    main()
+
