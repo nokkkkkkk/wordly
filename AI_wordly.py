@@ -2,8 +2,13 @@ from transformers import pipeline, AutoTokenizer, AutoModelWithLMHead
 from termcolor import colored
 import random
 import sys
+import pymorphy2
+from langdetect import detect
 
-# Попытка загрузить русскую GPT-модель
+# Загрузка морфологический анализатор для проверки существительных
+morph = pymorphy2.MorphAnalyzer()
+
+# Загрузка GPT-модель
 print("Загрузка ИИ...")
 try:
     tokenizer = AutoTokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")
@@ -13,24 +18,32 @@ except Exception as e:
     print("Ошибка загрузки модели RuGPT:", e)
     text_gen = None
 
-# Запасной список слов на случай сбоя искусственного интеллекта
+# Запасной список слов
 fallback_words = ["лампа", "песня", "завод", "носик", "снега", "чайка", "город", "листь", "водач", "время"]
 
-# Сгенерируйте русское слово из 5 букв с помощью искусственного интеллекта
+# Проверка, является ли слово русским существительным
+def is_russian_noun(word):
+    if detect(word) != "ru":
+        return False
+    parsed = morph.parse(word)
+    return any(p.tag.POS == 'NOUN' for p in parsed)
+
+# Генерация на основе искусственного интеллекта 5-буквенное русское существительное
 def generate_word():
     if text_gen:
-        prompt = "Придумай случайное русское слово из 5 букв:"
+        prompt = "Придумай одно существительное на русском языке, состоящее из 5 букв:"
         try:
-            response = text_gen(prompt, max_length=20, num_return_sequences=1)
-            word = response[0]['generated_text'].strip().split()[-1]
-            word = ''.join(filter(str.isalpha, word))
-            if len(word) == 5:
-                return word.lower()
-        except:
-            pass
+            for _ in range(5):  
+                response = text_gen(prompt, max_length=20, num_return_sequences=1)
+                word = response[0]['generated_text'].strip().split()[-1]
+                word = ''.join(filter(str.isalpha, word)).lower()
+                if len(word) == 5 and is_russian_noun(word):
+                    return word
+        except Exception as e:
+            print("Ошибка генерации:", e)
     return random.choice(fallback_words)
 
-# Оцените, угадайте и распечатайте цветной отзыв
+# Оценка в стиле Wordle
 def evaluate_guess(secret_word, guess):
     output = ""
     for i in range(5):
@@ -42,7 +55,7 @@ def evaluate_guess(secret_word, guess):
             output += guess[i]
     print(output)
 
-# Настройки сложности
+# Уровни сложности
 difficulties = {
     "1": {"tries": 1000, "hints": 3, "name": "Лёгкий (бесконечные попытки, 3 подсказки)"},
     "2": {"tries": 10, "hints": 1, "name": "Средний (10 попыток, 1 подсказка)"},
@@ -50,7 +63,7 @@ difficulties = {
     "4": {"tries": 3, "hints": 0, "name": "Хардкор (3 попытки, без подсказок)"},
 }
 
-# Игровая логика
+# Режим искусственного интеллекта
 def play_with_ai():
     print("\nВыберите уровень сложности:")
     for key in difficulties:
@@ -62,7 +75,7 @@ def play_with_ai():
     attempts = level["tries"]
     hints = level["hints"]
     
-    print("\nУгадай слово из 5 букв. Удачи!\n")
+    print("\nУгадай существительное из 5 букв. Введи 'hint' для подсказки.\n")
 
     while attempts > 0:
         guess = input("Введите слово: ").strip().lower()
@@ -82,11 +95,11 @@ def play_with_ai():
     
     print(colored(f"Вы проиграли. Загаданное слово было: {secret}", "red"))
 
-# Локальный многопользовательский режим
+# Многопользовательский режим
 def play_with_friend():
     print("\nИгрок 1, введите слово из 5 букв:")
     secret = input("Секретное слово: ").strip().lower()
-    print("\n" * 50)  # Чистый экран
+    print("\n" * 50)  # Очистить экран
     print("Игрок 2, угадывай слово!")
 
     attempts = 6
@@ -101,7 +114,6 @@ def play_with_friend():
             return
         attempts -= 1
         print(f"Осталось попыток: {attempts}")
-    
     print(colored(f"Увы! Слово было: {secret}", "red"))
 
 # Баннер
@@ -111,7 +123,7 @@ def show_banner():
     print(colored("     Игра на угадывание слов", "cyan"))
     print(colored("="*30 + "\n", "magenta"))
 
-# Главное меню
+# Меню
 def main():
     show_banner()
     print("1. Играть с ИИ")
@@ -130,6 +142,5 @@ def main():
         print("Неверный ввод. Попробуйте снова.")
         main()
 
-if __name__ == '__main__':
+if name == '__main__':
     main()
-
