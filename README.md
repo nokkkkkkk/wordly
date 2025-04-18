@@ -33,4 +33,4 @@ https://youtu.be/QFhWS4qh2XY?si=7uWXackUrsaq3Y1m
 
 если у вас еще не установлены некоторые библиотеки, вот все, которые вам нужны:
 
-pip install transformers sentencepiece termcolor pymorphy2 langdetect
+pip install transformers pymorphy2 termcolor pyzimmwparserfromhell
