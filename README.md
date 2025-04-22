@@ -10,9 +10,7 @@
 Если вы правильно угадали букву, но не в том месте, буква будет желтой, если в правильном месте буква будет зеленой.
 Для этого я использовал эти материалы:
 
-https://youtu.be/-a1Wjuinqvc?si=aEAvpEZPRQfpqFRU
-
-это видео сравнивает chatGPT от OpenAI и ruGPT-3.5 от SBER (которыми я пользуюсь прямо сейчас)
+[это видео](https://youtu.be/-a1Wjuinqvc?si=aEAvpEZPRQfpqFRU) сравнивает chatGPT от OpenAI и ruGPT-3.5 от SBER (которыми я пользуюсь прямо сейчас)
 
 https://youtu.be/O-fGWA_tOH4?si=gVAx6Mi50BJryM9J
 
