@@ -12,13 +12,11 @@
 
 [это видео](https://youtu.be/-a1Wjuinqvc?si=aEAvpEZPRQfpqFRU) сравнивает chatGPT от OpenAI и ruGPT-3.5 от SBER (которыми я пользуюсь прямо сейчас)
 
-https://youtu.be/O-fGWA_tOH4?si=gVAx6Mi50BJryM9J
-
-это видео помогает понять, как печатать цветной текст
+[это видео](https://youtu.be/O-fGWA_tOH4?si=gVAx6Mi50BJryM9J) помогает понять, как печатать цветной текст
 
 https://arxiv.org/abs/2309.10931
 
-данная статья посвящена морфологическому анализу русского словаря
+данная [статья](https://arxiv.org/abs/2309.10931) посвящена морфологическому анализу русского словаря
 
 https://www.researchgate.net/publication/374707138_Information_Theory-based_Wordle_Game_Word_Difficulty_Classification_and_Dynamic_Planning_Optimization_Research
 
